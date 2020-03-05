@@ -20,7 +20,7 @@ def main(args):
         # use the directory name as output prefix
         cmd += " -p {0} ".format(os.path.basename(d2))
         if args.genome_fasta_mmi is not None:
-            cmd += " -G {0} -S {1} ".format(args.genome_fasta_mmi, args.species_name)
+            cmd += " -G {0} -S {1} -t {2} ".format(args.genome_fasta_mmi, args.species_name, args.threads)
         print cmd
 
 
@@ -31,6 +31,7 @@ if __name__ == "__main__":
     parser.add_argument("dirname")
     parser.add_argument("-G", "--genome_fasta_mmi", default=None, help="Optional genome fasta or mmi (ex: genome.fasta or genome.mmi). If provided, Cogent output will be mapped to the genome using minimap2.")
     parser.add_argument("-S", "--species_name", default="NA", help="Species name (optional, only used if genome fasta/mmi provided).")
+    parser.add_argument("-T", "--threads", default=3, type=int, help="Threads to run the script")
 
     args = parser.parse_args()
 
