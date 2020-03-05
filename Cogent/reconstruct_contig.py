@@ -55,7 +55,7 @@ def split_files(input_filename='in.trimmed.fa', split_size=20):
     return split_dirs
 
 
-def run_Cogent_on_split_files(split_dirs, depth):
+def run_Cogent_on_split_files(split_dirs, depth, threads=3):
     """
     1. run Cogent individually on each split directory
     2. combine all cogent2.fa from split directories, pretend they are the "INPUT", run Cogent on it
@@ -70,7 +70,7 @@ def run_Cogent_on_split_files(split_dirs, depth):
             os.chdir(olddir)
             continue
         try:
-            run_Cogent_on_input()
+            run_Cogent_on_input(threads=threads)
             os.chdir(olddir)
         except CycleDetectedException:
             os.chdir(olddir)
@@ -94,8 +94,8 @@ def run_Cogent_on_split_files(split_dirs, depth):
     os.chdir('combined')
     if i > cc_settings.MAX_POST_SPLIT_IN_SIZE and depth < cc_settings.MAX_RECUR_DEPTH:
         dirs = split_files(input_filename='in.trimmed.fa', split_size=cc_settings.MAX_POST_SPLIT_IN_SIZE)
-        run_Cogent_on_split_files(dirs, depth+1)
-    run_Cogent_on_input()
+        run_Cogent_on_split_files(dirs, depth+1, threads=threads)
+    run_Cogent_on_input(threads=threads)
     os.chdir('../')
 
     if os.path.exists('post_combined'):
@@ -105,7 +105,7 @@ def run_Cogent_on_split_files(split_dirs, depth):
     run_external_call("ln -s ../combined/cogent2.fa cogent.fa")
     run_external_call("ln -s ../in.weights in.weights")
     run_external_call("ln -s ../in.trimmed.fa in.trimmed.fa")
-    sam_file = run_minimap2('cogent.fa', 'in.trimmed.fa', 'SAM')
+    sam_file = run_minimap2('cogent.fa', 'in.trimmed.fa', 'SAM', threads=threads)
     post_minimap2_processing('cogent.fa', sam_file, 'cogent2', seqrecs=[r for r in SeqIO.parse(open('in.trimmed.fa'), 'fasta')])
     os.chdir('../')
 
@@ -117,7 +117,7 @@ def run_Cogent_on_split_files(split_dirs, depth):
     log.info("[RUNTIME] Total time in run_Cogent: {0}".format(time4-time1))
 
 
-def run_Cogent_on_input():
+def run_Cogent_on_input(threads=3):
     """
     The main reconstruction function.
 
@@ -226,7 +226,7 @@ def run_Cogent_on_input():
 
     time3 = time.time()
 
-    sam_file = run_minimap2('cogent.fa', 'in.trimmed.fa', format='SAM')
+    sam_file = run_minimap2('cogent.fa', 'in.trimmed.fa', format='SAM', threads=threads)
     post_minimap2_processing('cogent.fa', sam_file, 'cogent2', seqrecs=seqrecs)
 
     time4 = time.time()
@@ -238,7 +238,7 @@ def run_Cogent_on_input():
 
 
 
-def main():
+def main(threads=3):
     assert os.path.exists('in.fa')
     assert os.path.exists('in.weights')
 
@@ -247,13 +247,13 @@ def main():
     num_size = int(os.popen("grep -c \">\" in.fa").read().strip())
 
     if num_size <= cc_settings.MAX_SPLIT_IN_SIZE:
-        run_Cogent_on_input()
+        run_Cogent_on_input(threads=threads)
     else:
         dirs = split_files(input_filename='in.trimmed.fa', split_size=cc_settings.MAX_SPLIT_IN_SIZE)
-        run_Cogent_on_split_files(dirs, depth=0)
+        run_Cogent_on_split_files(dirs, depth=0, threads=threads)
 
     # align input to cogent2 so we can use it for evaluation later;
-    run_minimap2(ref='cogent2.fa', infile='in.trimmed.fa', format='SAM')
+    run_minimap2(ref='cogent2.fa', infile='in.trimmed.fa', format='SAM', threads=threads)
 
 
     # rewrite cogent2.fa with prefix
@@ -270,6 +270,7 @@ if __name__ == "__main__":
     parser.add_argument("-e", "--expected_error_rate", type=int, default=1, help="Expected error rate (default: 1%%)")
     parser.add_argument("--nx_cycle_detection", default=False, action="store_true", help="Cycle detection using networkx (default: off), will increase run-time. Recommend for debugging failed cases only.")
     parser.add_argument("-k", "--kmer_size", type=int, default=30, help="kmer size (default: 30)")
+    parser.add_argument("-t", "--threads", type=int, default=3, help="Threads to run the script")
     parser.add_argument("-p", "--output_prefix", help="Output path prefix (ex: sample1)")
     parser.add_argument("-G", "--genome_fasta_mmi", default=None, help="Optional genome fasta or mmi (ex: genome.fasta or genome.mmi). If provided, Cogent output will be mapped to the genome using minimap2.")
     parser.add_argument("-S", "--species_name", default="NA", help="Species name (optional, only used if genome fasta/mmi provided).")
@@ -344,7 +345,7 @@ if __name__ == "__main__":
     while cc_settings.KMER_SIZE <= max_kmer_to_try:
         try:
             os.chdir(args.dirname)
-            main()
+            main(threads=args.threads)
             main_success = True
             break
         except CycleDetectedException:

@@ -26,17 +26,17 @@ def run_external_call(cmd):
         raise Exception, "Failed to run: {0}".format(cmd)
 
 
-def run_minimap2(ref='cogent.fa', infile='in.trimmed.fa', format='PAF'):
+def run_minimap2(ref='cogent.fa', infile='in.trimmed.fa', format='PAF', threads=3):
     """
     Map input to cogent contig using minimap2. Replacement of run_gmap().
     NOTE: output will be in PAF format!
     """
     if format=='PAF':
         outfile = infile + '.paf'
-        run_external_call("minimap2 -x splice -t 1 {d} {i} > {o}".format(d=ref, i=infile, o=outfile))
+        run_external_call("minimap2 -x splice -t {} {d} {i} > {o}".format(threads, d=ref, i=infile, o=outfile))
     elif format=='SAM':
         outfile = infile + '.sam'
-        run_external_call("minimap2 -ax splice -t 1 {d} {i} > {o}".format(d=ref, i=infile, o=outfile))
+        run_external_call("minimap2 -ax splice -t {} {d} {i} > {o}".format(threads, d=ref, i=infile, o=outfile))
     else:
         raise Exception, "Unrecognized minimap2 output format: {0}. Abort!".format(format)
     return outfile
@@ -81,13 +81,13 @@ def post_minimap2_processing(ref='cogent.fa', sam='in.trimmed.fa.sam', output_pr
                 f.write(">path{0}\n{1}\n".format(fake_path_i, r.seq))
                 fake_path_i += 1
 
-def run_minimap2_for_final_SAM(input='in.trimmed.fa', output='cogent2.fa', ref='genome.fasta', species_name='speciesX'):
+def run_minimap2_for_final_SAM(input='in.trimmed.fa', output='cogent2.fa', ref='genome.fasta', species_name='speciesX', threads=3):
     # map in.trimmed.fa to genome
-    run_external_call("minimap2 -t 1 -ax splice -uf --secondary=no {r} {i} > {i}.{sp}.sam".format(r=ref, i=input, sp=species_name))
+    run_external_call("minimap2 -t {} -ax splice -uf --secondary=no {r} {i} > {i}.{sp}.sam".format(threads, r=ref, i=input, sp=species_name))
     # map cogent2.fa to genome
-    run_external_call("minimap2 -t 1 -ax splice -uf --secondary=no {r} {o} > {o}.{sp}.sam".format(r=ref, o=output, sp=species_name))
+    run_external_call("minimap2 -t {} -ax splice -uf --secondary=no {r} {o} > {o}.{sp}.sam".format(threads, r=ref, o=output, sp=species_name))
     # map in.trimmed.fa to cogent2
-    run_external_call("minimap2 -t 1 -ax splice -uf --secondary=no {o} {i} > {i}.cogent2.sam".format(o=output, i=input))
+    run_external_call("minimap2 -t {} -ax splice -uf --secondary=no {o} {i} > {i}.cogent2.sam".format(threads, o=output, i=input))
 
 #
 # def run_gmap(dbname='cogent', infile='in.trimmed.fa'):
