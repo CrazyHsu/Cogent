@@ -242,7 +242,7 @@ def main(threads=3):
     assert os.path.exists('in.fa')
     assert os.path.exists('in.weights')
 
-    sanity_checks.sanity_check_fasta('in.fa')
+    # sanity_checks.sanity_check_fasta('in.fa')
 
     num_size = int(os.popen("grep -c \">\" in.fa").read().strip())
 
@@ -360,4 +360,4 @@ if __name__ == "__main__":
 
 
     if args.genome_fasta_mmi is not None:
-        run_minimap2_for_final_SAM(input="in.trimmed.fa", output="cogent2.fa", ref=args.genome_fasta_mmi, species_name=args.species_name)
+        run_minimap2_for_final_SAM(input="in.trimmed.fa", output="cogent2.fa", ref=args.genome_fasta_mmi, species_name=args.species_name, threads=args.threads)
