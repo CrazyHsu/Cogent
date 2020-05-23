@@ -11,7 +11,7 @@ setup(name='Cogent',
       author_email='etseng@pacb.com',
       install_requires=[
           'matplotlib >= 2.0.0, < 3.0.0',
-          'numpy < 1.16',
+          'numpy',
           'scipy < 1.3',
           'networkx>=2.2',
           'scikit-image>=0.11.3 , <0.15',
